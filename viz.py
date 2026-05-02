@@ -1,6 +1,9 @@
 """Snapshot-grid and timeline plots for the rescue-contagion simulation."""
+from pathlib import Path
+
 import matplotlib.pyplot as plt
 import networkx as nx
+import numpy as np
 
 RED = "#ef4444"
 BLUE = "#3b82f6"
@@ -34,6 +37,7 @@ def visualize(graph, history, path, max_panels=6):
         ax.set_title(f"t={idx}   {presses.mean():.0%} blue")
 
     plt.tight_layout()
+    Path(path).parent.mkdir(parents=True, exist_ok=True)
     plt.savefig(path, dpi=120, bbox_inches="tight")
     print(f"Saved {path}")
 
@@ -50,5 +54,44 @@ def plot_timeline(history, path):
     ax.legend()
     ax.grid(True, alpha=0.3)
     plt.tight_layout()
+    Path(path).parent.mkdir(parents=True, exist_ok=True)
+    plt.savefig(path, dpi=120, bbox_inches="tight")
+    print(f"Saved {path}")
+
+
+def plot_band(timelines, path):
+    """Mean ± std band of fraction-blue across many seeds."""
+    mean = timelines.mean(axis=0)
+    std = timelines.std(axis=0)
+    iters = np.arange(len(mean))
+    fig, ax = plt.subplots(figsize=(8, 4))
+    ax.fill_between(iters, mean - std, mean + std, color=BLUE, alpha=0.2, label="± 1 std")
+    ax.plot(iters, mean, color=BLUE, linewidth=2, label="mean")
+    ax.axhline(0.5, linestyle="--", color="gray", alpha=0.5, label="50% saved threshold")
+    ax.set_xlabel("iteration")
+    ax.set_ylabel("fraction pressing blue")
+    ax.set_ylim(0, 1.02)
+    ax.set_xlim(left=0)
+    ax.legend()
+    ax.grid(True, alpha=0.3)
+    plt.tight_layout()
+    Path(path).parent.mkdir(parents=True, exist_ok=True)
+    plt.savefig(path, dpi=120, bbox_inches="tight")
+    print(f"Saved {path}")
+
+
+def plot_distribution(finals, path):
+    """Histogram of final blue fractions across seeds."""
+    fig, ax = plt.subplots(figsize=(8, 4))
+    ax.hist(finals, bins=20, color=BLUE, alpha=0.7, edgecolor="white")
+    ax.axvline(finals.mean(), color="black", linestyle="--", label=f"mean = {finals.mean():.1%}")
+    ax.axvline(0.5, color="gray", linestyle=":", alpha=0.5, label="50% saved threshold")
+    ax.set_xlabel("final fraction blue")
+    ax.set_ylabel("number of seeds")
+    ax.set_xlim(0, 1)
+    ax.legend()
+    ax.grid(True, alpha=0.3)
+    plt.tight_layout()
+    Path(path).parent.mkdir(parents=True, exist_ok=True)
     plt.savefig(path, dpi=120, bbox_inches="tight")
     print(f"Saved {path}")

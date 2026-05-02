@@ -9,9 +9,9 @@ The hypothetical is relatively simple: Everybody takes a private vote, where the
 The kneejerk reaction from many people is: obviously, press red, so you survive!
 But interestingly, the results show the opposite:
 
-![Tim Urban red-button-blue-button poll, 2026/04/24](image.png)
+![Tim Urban red-button-blue-button poll, 2026/04/24](readme_pics/tim_urban_poll.png)
 
-![MrBeast red-button-blue-button poll, 2026/04/29](image-1.png)
+![MrBeast red-button-blue-button poll, 2026/04/29](readme_pics/mr_beast_poll.png)
 
 This suggests some interesting dynamics at play. The words 'prosocial' and 'altruistic' are brought up a lot, but I don't think this is entirely correct.
 
@@ -19,14 +19,14 @@ I believe it is usually in a person's best interest to press the blue button bec
 
 In this repo we model this dynamic. The simulation looks like this:
 
-![Graph showing an evolution of blue-causing-blue votes; moving from 15% blue -> 66% blue](simulation_weighted.png)
+![Graph showing an evolution of blue-causing-blue votes; moving from 15% blue -> 66% blue](readme_pics/simulation_weighted.png)
 
 Further intesting models:
 
 prerat has some interesting polls, whereby two separate polls are created.
 
-https://x.com/prerat/status/2048135020301164923 > ![prerat blue-button-do-nothing poll](image-3.png)
-https://x.com/prerat/status/2048134933105811803 > ![prerat blue-button-do-nothing poll](image-4.png)
+https://x.com/prerat/status/2048135020301164923 > ![prerat blue-button-do-nothing poll](readme_pics/prerat_poll_1.png)
+https://x.com/prerat/status/2048134933105811803 > ![prerat blue-button-do-nothing poll](readme_pics/prerat_poll_2.png)
 
 There is a clear bias towards 'Do nothing' despite having opposite effects. 
 This suggests that the action of pushing the button is a sort of friction; doing nothing is a natural thing. When the actions are equal - pressing one button or the other - is when we get an unbiased view.
@@ -46,28 +46,49 @@ Intuition: *"if my loved ones might press blue, they'll die unless 50% of the wo
 
 A `stubborn_red` fraction never engages with this reasoning and stays red regardless.
 
+## Parameters
+
+All parameters live on `simulation.build(...)`:
+
+| Parameter | Default | Meaning |
+|---|---|---|
+| `n` | — | number of people |
+| `k` | — | average number of close ties per person (graph degree) |
+| `rewire_p` | — | Watts-Strogatz rewiring probability (small-world parameter) |
+| `initial_blue` | — | fraction of people starting committed to blue |
+| `rescue_threshold` | — | mean rescue pressure needed to flip someone red→blue |
+| `rescue_threshold_std` | `0.0` | per-person heterogeneity (Normal around the mean, clipped at 0) |
+| `tiers` | `None` | `[(fraction, weight), ...]` for tie-strength tiers; `None` = uniform weights |
+| `stubborn_red` | `0.0` | fraction who never flip from red |
+| `seed` | `None` | RNG seed |
+
+Plus `run(..., max_iters=200)` — caps iteration count (the loop exits earlier when no node flips).
+
 ## Variants
 
-| | `main.py` | `main_weighted.py` |
-|---|---|---|
-| Edge weights | uniform | family `1.0` / friend `0.5` / acquaintance `0.25` |
-| Stubborn red | none | yes (default 15%) |
-| `initial_blue` | 0.15 | 0.15 |
-| `rescue_threshold` | 1.5 | 1.0 |
-| Result (single seed) | 15% → 100% in 4 steps | 14% → 66% in 9 steps |
+| | `main.py` | `main_stubborn.py` | `main_weighted.py` |
+|---|---|---|---|
+| Edge weights | uniform | uniform | family `1.0` / friend `0.5` / acquaintance `0.25` |
+| `stubborn_red` | 0% | 15% | 15% |
+| `initial_blue` | 15% | 15% | 15% |
+| `rescue_threshold` | 1.5 | 1.5 | 1.0 |
+| `rescue_threshold_std` | 0.3 | 0.3 | 0.3 |
+| Result (single seed) | 15% → 100%, 4 steps | 15% → 86%, 5 steps | 14% → 59%, 7 steps |
 
-The unweighted model is a baseline — with any non-trivial seed, blue cascades to total takeover. The weighted model with stubborn red lands near the empirical Twitter result.
+The unweighted models are baselines — with any non-trivial seed, blue cascades to (near-)total takeover. The weighted model with stubborn red and threshold heterogeneity lands near the empirical Twitter result.
 
 ## Run
 
 ```sh
 uv run python main.py
+uv run python main_stubborn.py
 uv run python main_weighted.py
 ```
 
-Outputs PNG snapshots and (for the weighted run) a timeline plot.
+Outputs PNG snapshots and timeline plots.
 
 ## Files
 
-- `simulation.py` — model: `build`, `build_weighted`, `run`. The update step is a single sparse matrix-vector product.
-- `main.py`, `main_weighted.py` — runnable demos with visualization.
+- `simulation.py` — model: `build`, `run`. The update step is a single sparse matrix-vector product.
+- `viz.py` — `visualize` (snapshot grid) and `plot_timeline`.
+- `main.py`, `main_stubborn.py`, `main_weighted.py` — runnable demos with different parameter combinations.

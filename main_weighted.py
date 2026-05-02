@@ -17,6 +17,7 @@ def main():
         rewire_p=0.1,
         initial_blue=committed,
         rescue_threshold=1.0,
+        rescue_threshold_std=0.3,
         tiers=TIERS,
         stubborn_red=committed,
         seed=42,
@@ -26,7 +27,7 @@ def main():
     print(f"Stubborn red:  {stubborn.mean():.1%}")
     print(f"Final blue:    {history[-1].mean():.1%}")
     print(f"Iterations:    {len(history) - 1}")
-    visualize(graph, history, "simulation_weighted.png")
+    visualize(graph, history, "readme_pics/simulation_weighted.png")
     plot_timeline(history, "timeline_weighted.png")
 
 

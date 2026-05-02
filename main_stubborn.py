@@ -11,6 +11,7 @@ def main():
         rewire_p=0.1,
         initial_blue=committed,
         rescue_threshold=1.5,
+        rescue_threshold_std=0.3,
         stubborn_red=committed,
         seed=42,
     )

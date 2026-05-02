@@ -10,6 +10,7 @@ def main():
         rewire_p=0.1,
         initial_blue=0.15,
         rescue_threshold=1.5,
+        rescue_threshold_std=0.3,
         seed=42,
     )
     history = run(adj, presses, thresholds)
