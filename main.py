@@ -1,6 +1,6 @@
 """Simple unweighted demo: blue cascades to total takeover."""
 from simulation import build, run
-from viz import visualize, plot_timeline
+from viz import animate, plot_timeline, visualize
 
 
 def main():
@@ -19,6 +19,7 @@ def main():
     print(f"Iterations:   {len(history) - 1}")
     visualize(graph, history, "simulation.png")
     plot_timeline(history, "timeline.png")
+    animate(graph, history, "simulation.gif")
 
 
 if __name__ == "__main__":

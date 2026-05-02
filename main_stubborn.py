@@ -1,6 +1,6 @@
 """Unweighted edges + stubborn-red population: blue cascade meets firewalls."""
 from simulation import build, run
-from viz import visualize, plot_timeline
+from viz import animate, plot_timeline, visualize
 
 
 def main():
@@ -22,6 +22,7 @@ def main():
     print(f"Iterations:    {len(history) - 1}")
     visualize(graph, history, "simulation_stubborn.png")
     plot_timeline(history, "timeline_stubborn.png")
+    animate(graph, history, "simulation_stubborn.gif")
 
 
 if __name__ == "__main__":

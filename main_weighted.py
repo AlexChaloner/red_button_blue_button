@@ -1,6 +1,6 @@
 """Weighted-edge variant with stubborn-red population."""
 from simulation import build, run
-from viz import visualize, plot_timeline
+from viz import animate, plot_timeline, visualize
 
 TIERS = [
     (0.2, 1.0),   # family
@@ -29,6 +29,7 @@ def main():
     print(f"Iterations:    {len(history) - 1}")
     visualize(graph, history, "readme_pics/simulation_weighted.png")
     plot_timeline(history, "timeline_weighted.png")
+    animate(graph, history, "readme_pics/simulation_weighted.gif")
 
 
 if __name__ == "__main__":
