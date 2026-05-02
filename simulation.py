@@ -3,26 +3,26 @@ import numpy as np
 import networkx as nx
 
 
-def build(n, k, rewire_p, initial_blue, rescue_threshold, seed=None):
+def build(n, k, rewire_p, initial_blue, rescue_threshold, tiers=None, stubborn_red=0.0, seed=None):
+    """Build a population graph with optional weighted ties and stubborn-red subpopulation.
+
+    tiers: list of (fraction, weight). None = uniform weights.
+    stubborn_red: fraction of people who never flip from red.
+    """
     rng = np.random.default_rng(seed)
     graph = nx.watts_strogatz_graph(n, k, rewire_p, seed=seed)
-    adj = nx.to_scipy_sparse_array(graph, format="csr", dtype=np.float32)
-    presses = (rng.random(n) < initial_blue).astype(np.int8)
-    thresholds = np.full(n, rescue_threshold, dtype=np.float32)
-    return graph, adj, presses, thresholds
 
+    if tiers is None:
+        adj = nx.to_scipy_sparse_array(graph, format="csr", dtype=np.float32)
+    else:
+        fractions = np.array([t[0] for t in tiers])
+        weights = np.array([t[1] for t in tiers])
+        edges = list(graph.edges())
+        chosen = rng.choice(len(tiers), size=len(edges), p=fractions)
+        for (u, v), idx in zip(edges, chosen):
+            graph[u][v]["weight"] = float(weights[idx])
+        adj = nx.to_scipy_sparse_array(graph, format="csr", dtype=np.float32, weight="weight")
 
-def build_weighted(n, k, rewire_p, initial_blue, rescue_threshold, tiers, stubborn_red=0.0, seed=None):
-    """tiers: list of (fraction, weight). stubborn_red: fraction who never flip from red."""
-    rng = np.random.default_rng(seed)
-    graph = nx.watts_strogatz_graph(n, k, rewire_p, seed=seed)
-    fractions = np.array([t[0] for t in tiers])
-    weights = np.array([t[1] for t in tiers])
-    edges = list(graph.edges())
-    chosen = rng.choice(len(tiers), size=len(edges), p=fractions)
-    for (u, v), idx in zip(edges, chosen):
-        graph[u][v]["weight"] = float(weights[idx])
-    adj = nx.to_scipy_sparse_array(graph, format="csr", dtype=np.float32, weight="weight")
     p_switch = 1.0 - initial_blue - stubborn_red
     roles = rng.choice(3, size=n, p=[initial_blue, stubborn_red, p_switch])
     presses = (roles == 0).astype(np.int8)
