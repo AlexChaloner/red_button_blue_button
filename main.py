@@ -14,7 +14,7 @@ def visualize(graph, history, path="simulation.png"):
     rows = (n + cols - 1) // cols
     fig, axes = plt.subplots(rows, cols, figsize=(4.2 * cols, 4.2 * rows), squeeze=False)
     axes = axes.flatten()
-    pos = nx.kamada_kawai_layout(graph)
+    pos = nx.spring_layout(graph, iterations=200, seed=42)
     for i, (ax, presses) in enumerate(zip(axes, history)):
         colors = [BLUE if p else RED for p in presses]
         nx.draw(graph, pos=pos, node_color=colors, ax=ax,

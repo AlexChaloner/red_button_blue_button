@@ -24,7 +24,7 @@ def visualize(graph, history, stubborn, path="simulation_weighted.png", max_pane
     n = len(indices)
     fig, axes = plt.subplots(1, n, figsize=(4.2 * n, 4.2), squeeze=False)
     axes = axes.flatten()
-    pos = nx.kamada_kawai_layout(graph)
+    pos = nx.spring_layout(graph, weight="weight", iterations=200, seed=42)
     edge_widths = [graph[u][v]["weight"] * 1.8 for u, v in graph.edges()]
     edge_colors = [(0.25, 0.25, 0.25, graph[u][v]["weight"]) for u, v in graph.edges()]
     for ax, idx in zip(axes, indices):
