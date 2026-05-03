@@ -19,7 +19,7 @@ I believe it is usually in a person's best interest to press the blue button bec
 
 In this repo we model this dynamic. The simulation looks like this:
 
-![Graph showing an evolution of blue-causing-blue votes; moving from 15% blue -> 66% blue](readme_pics/simulation_weighted.png)
+![Graph showing an evolution of blue-causing-blue votes; moving from 30% blue -> 67% blue](sim_pics/simulation_weighted.png)
 
 Further intesting models:
 

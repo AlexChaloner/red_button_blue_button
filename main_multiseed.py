@@ -24,8 +24,8 @@ def main():
 
     finals_small, timelines_small = run_many(n_seeds=100, build_kwargs=dict(n=100, **base))
     report("n=100, 100 seeds", finals_small)
-    plot_band(timelines_small, "band_weighted.png")
-    plot_distribution(finals_small, "histogram_weighted.png")
+    plot_band(timelines_small, "sim_pics/band_weighted.png")
+    plot_distribution(finals_small, "sim_pics/histogram_weighted.png")
 
     print()
     finals_big, _ = run_many(n_seeds=50, build_kwargs=dict(n=10000, **base))

@@ -3,15 +3,14 @@ from simulation import build, run
 from viz import animate, plot_timeline, visualize
 
 TIERS = [
-    (0.2, 1.0),   # family
-    (0.3, 0.5),   # close friends
-    (0.5, 0.25),  # acquaintances
+    (0.4, 1.0),   # strong ties (family / close friends)
+    (0.6, 0.5),   # weaker ties (friends / acquaintances)
 ]
 
 
 def main():
-    committed = 0.15
-    graph, adj, presses, thresholds, stubborn = build(
+    committed = 0.30
+    graph, adj, state, thresholds, stubborn = build(
         n=100,
         k=6,
         rewire_p=0.1,
@@ -22,14 +21,16 @@ def main():
         stubborn_red=committed,
         seed=42,
     )
-    history = run(adj, presses, thresholds)
-    print(f"Initial blue:  {history[0].mean():.1%}")
-    print(f"Stubborn red:  {stubborn.mean():.1%}")
-    print(f"Final blue:    {history[-1].mean():.1%}")
-    print(f"Iterations:    {len(history) - 1}")
-    visualize(graph, history, "readme_pics/simulation_weighted.png")
-    plot_timeline(history, "timeline_weighted.png")
-    animate(graph, history, "readme_pics/simulation_weighted.gif")
+    history = run(adj, state, thresholds)
+    final = history[-1]
+    print(f"Committed blue: {(history[0] == 1).mean():.1%}")
+    print(f"Committed red:  {stubborn.mean():.1%}")
+    print(f"Final blue:     {(final == 1).mean():.1%}")
+    print(f"Final red:      {(final == -1).mean():.1%}")
+    print(f"Iterations:     {len(history) - 1}")
+    visualize(graph, history, "sim_pics/simulation_weighted.png")
+    plot_timeline(history, "sim_pics/timeline_weighted.png")
+    animate(graph, history, "sim_pics/simulation_weighted.gif")
 
 
 if __name__ == "__main__":

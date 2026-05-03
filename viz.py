@@ -8,20 +8,55 @@ import numpy as np
 
 DPI = 300
 
+plt.rcParams.update({
+    "axes.labelsize": 14,
+    "axes.titlesize": 14,
+    "xtick.labelsize": 12,
+    "ytick.labelsize": 12,
+    "legend.fontsize": 12,
+})
+
 RED = "#ef4444"
 BLUE = "#3b82f6"
+UNDECIDED = "#e5e7eb"
 
 
-def _graph_style(graph):
+def _node_colors(state):
+    return [BLUE if s == 1 else (RED if s == -1 else UNDECIDED) for s in state]
+
+
+def _label(state):
+    blue = (state == 1).mean()
+    red = (state == -1).mean()
+    return f"{blue:.0%} blue / {red:.0%} red"
+
+
+def _layout(graph):
+    weight = "weight" if nx.is_weighted(graph) else None
+    return nx.spring_layout(graph, weight=weight, iterations=200, seed=42)
+
+
+def _draw_edges(graph, pos, ax):
+    """Draw weak ties first, strong ties on top — strong ones pop visually."""
     if nx.is_weighted(graph):
-        pos = nx.spring_layout(graph, weight="weight", iterations=200, seed=42)
-        edge_widths = [graph[u][v]["weight"] * 1.8 for u, v in graph.edges()]
-        edge_colors = [(0.25, 0.25, 0.25, graph[u][v]["weight"]) for u, v in graph.edges()]
+        edges = list(graph.edges())
+        weights = np.array([graph[u][v]["weight"] for u, v in edges])
+        for w in sorted(np.unique(weights)):
+            sub = [e for e, ew in zip(edges, weights) if ew == w]
+            shade = 1.0 - 0.45 * w
+            color = (shade, shade, shade)
+            width = 0.3 + 0.8 * w
+            nx.draw_networkx_edges(graph, pos, edgelist=sub, ax=ax,
+                                   edge_color=[color], width=width)
     else:
-        pos = nx.spring_layout(graph, iterations=200, seed=42)
-        edge_widths = 0.5
-        edge_colors = "#d1d5db"
-    return pos, edge_widths, edge_colors
+        nx.draw_networkx_edges(graph, pos, ax=ax, edge_color="#d1d5db", width=0.7)
+
+
+def _draw(graph, pos, state, ax, node_size):
+    _draw_edges(graph, pos, ax)
+    nx.draw_networkx_nodes(graph, pos, node_color=_node_colors(state), ax=ax,
+                           node_size=node_size, edgecolors="#6b7280", linewidths=0.5)
+    ax.set_axis_off()
 
 
 def visualize(graph, history, path, max_panels=6):
@@ -33,13 +68,11 @@ def visualize(graph, history, path, max_panels=6):
     n = len(indices)
     fig, axes = plt.subplots(1, n, figsize=(4.2 * n, 4.2), squeeze=False)
     axes = axes.flatten()
-    pos, edge_widths, edge_colors = _graph_style(graph)
+    pos = _layout(graph)
     for ax, idx in zip(axes, indices):
-        presses = history[idx]
-        colors = [BLUE if p else RED for p in presses]
-        nx.draw(graph, pos=pos, node_color=colors, ax=ax,
-                node_size=80, edge_color=edge_colors, width=edge_widths)
-        ax.set_title(f"t={idx}   {presses.mean():.0%} blue")
+        state = history[idx]
+        _draw(graph, pos, state, ax, node_size=80)
+        ax.set_title(f"t={idx}   {_label(state)}")
 
     plt.tight_layout()
     Path(path).parent.mkdir(parents=True, exist_ok=True)
@@ -51,17 +84,15 @@ def animate(graph, history, path, fps=2, hold_frames=2):
     """Render the cascade as an animated GIF, with a brief hold at start/end."""
     frames = [history[0]] * hold_frames + list(history) + [history[-1]] * (hold_frames + 1)
     n_orig = len(history)
-    pos, edge_widths, edge_colors = _graph_style(graph)
+    pos = _layout(graph)
     fig, ax = plt.subplots(figsize=(8, 8))
 
     def render(i):
         ax.clear()
-        presses = frames[i]
-        colors = [BLUE if p else RED for p in presses]
-        nx.draw(graph, pos=pos, node_color=colors, ax=ax,
-                node_size=140, edge_color=edge_colors, width=edge_widths)
+        state = frames[i]
+        _draw(graph, pos, state, ax, node_size=140)
         t = max(0, min(n_orig - 1, i - hold_frames))
-        ax.set_title(f"t={t}   {presses.mean():.0%} blue", fontsize=16)
+        ax.set_title(f"t={t}   {_label(state)}", fontsize=16)
 
     anim = animation.FuncAnimation(fig, render, frames=len(frames), interval=1000 / fps)
     Path(path).parent.mkdir(parents=True, exist_ok=True)
@@ -71,12 +102,14 @@ def animate(graph, history, path, fps=2, hold_frames=2):
 
 
 def plot_timeline(history, path):
-    fractions = [h.mean() for h in history]
+    blue = [(h == 1).mean() for h in history]
+    red = [(h == -1).mean() for h in history]
     fig, ax = plt.subplots(figsize=(8, 4))
-    ax.plot(fractions, marker="o", color=BLUE, linewidth=2)
-    ax.axhline(0.5, linestyle="--", color="gray", alpha=0.5, label="50% saved threshold")
+    ax.plot(blue, marker="o", color=BLUE, linewidth=2, label="blue")
+    ax.plot(red, marker="o", color=RED, linewidth=2, label="red")
+    ax.axhline(0.5, linestyle="--", color="gray", alpha=0.5)
     ax.set_xlabel("iteration")
-    ax.set_ylabel("fraction pressing blue")
+    ax.set_ylabel("fraction of population")
     ax.set_ylim(0, 1.02)
     ax.set_xlim(left=0)
     ax.legend()
@@ -127,19 +160,42 @@ def plot_sweep_1d(x, mean, std, path, xlabel):
 
 def plot_heatmap(xs, ys, grid, path, xlabel, ylabel):
     fig, ax = plt.subplots(figsize=(7, 6))
-    im = ax.imshow(
-        grid.T, origin="lower", aspect="auto",
-        extent=[xs[0], xs[-1], ys[0], ys[-1]],
-        cmap="RdBu", vmin=0, vmax=1,
-    )
-    cb = plt.colorbar(im, ax=ax)
-    cb.set_label("mean final fraction blue")
     X, Y = np.meshgrid(xs, ys, indexing="ij")
+    pcm = ax.pcolormesh(X, Y, grid, cmap="RdBu", vmin=0, vmax=1, shading="nearest")
+    cb = plt.colorbar(pcm, ax=ax)
+    cb.set_label("mean final fraction blue", fontsize=13)
     cs = ax.contour(X, Y, grid, levels=[0.5, 0.58], colors=["gray", "black"], linewidths=1.5)
-    ax.clabel(cs, inline=True, fontsize=9, fmt="%.2f")
+    ax.clabel(cs, inline=True, fontsize=11, fmt="%.2f")
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
     plt.tight_layout()
+    Path(path).parent.mkdir(parents=True, exist_ok=True)
+    plt.savefig(path, dpi=DPI, bbox_inches="tight")
+    print(f"Saved {path}")
+
+
+def plot_heatmap_grid(xs, ys, grids, slice_values, path, xlabel, ylabel, slice_label):
+    """Render a 3D sweep as a 2x2 grid of 2D heatmaps, one per slice value, sharing one colorbar."""
+    n = len(grids)
+    nrows = (n + 1) // 2
+    ncols = 2 if n > 1 else 1
+    fig, axes = plt.subplots(nrows, ncols, figsize=(6 * ncols, 5 * nrows),
+                             squeeze=False, constrained_layout=True)
+    X, Y = np.meshgrid(xs, ys, indexing="ij")
+    pcm = None
+    flat = axes.flatten()
+    for i, (grid, sv) in enumerate(zip(grids, slice_values)):
+        ax = flat[i]
+        pcm = ax.pcolormesh(X, Y, grid, cmap="RdBu", vmin=0, vmax=1, shading="nearest")
+        cs = ax.contour(X, Y, grid, levels=[0.5, 0.58], colors=["gray", "black"], linewidths=1.2)
+        ax.clabel(cs, inline=True, fontsize=10, fmt="%.2f")
+        ax.set_xlabel(xlabel)
+        ax.set_ylabel(ylabel)
+        ax.set_title(f"{slice_label} = {sv:.2f}")
+    for j in range(n, len(flat)):
+        flat[j].axis("off")
+    cb = fig.colorbar(pcm, ax=axes.ravel().tolist(), shrink=0.85, pad=0.02)
+    cb.set_label("mean final fraction blue", fontsize=13)
     Path(path).parent.mkdir(parents=True, exist_ok=True)
     plt.savefig(path, dpi=DPI, bbox_inches="tight")
     print(f"Saved {path}")
