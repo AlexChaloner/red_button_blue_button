@@ -1,8 +1,8 @@
 # Red button / blue button
 
-In April 2026, the red-button-blue-button hypothetical went viral (again):
+Substack post: https://alexchaloner.substack.com/p/simulating-the-red-button-blue-button
 
-
+In April 2026, the red-button-blue-button hypothetical went viral (again).
 
 The hypothetical is relatively simple: Everybody takes a private vote, where they press a Red Button or a Blue Button. If you press the red button, you are guaranteed to survive. However, if you press the blue button - you will survive only if >=50% of people also pressed the blue button.
 
